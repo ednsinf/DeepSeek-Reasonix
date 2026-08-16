@@ -74,6 +74,8 @@ export function useTranscriptVirtuosoScroll({
   const followFrameRef = useRef<number | null>(null);
   const tailSettleFrameRef = useRef<number | null>(null);
   const resizeSettleFrameRef = useRef<number | null>(null);
+  const userScrollingRef = useRef(false); // Track if user is actively scrolling
+  const userScrollTimerRef = useRef<number | null>(null);
   const [nativeScrollbarDragging, setNativeScrollbarDragging] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
@@ -105,7 +107,8 @@ export function useTranscriptVirtuosoScroll({
     let attempts = 0;
     const tick = () => {
       tailSettleFrameRef.current = null;
-      if (modeRef.current !== "tail-follow") return;
+      // Don't force scroll if user is actively scrolling or not in tail-follow mode
+      if (modeRef.current !== "tail-follow" || userScrollingRef.current) return;
       scrollToTail("auto");
       attempts += 1;
       const element = scrollRef.current;
@@ -297,8 +300,15 @@ export function useTranscriptVirtuosoScroll({
   const onWheelIntent = useCallback((event: ReactWheelEvent<HTMLElement>) => {
     if (event.ctrlKey || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return false;
     if (restoreTailIfNotScrollable()) return false;
-    // When scrolling UP (deltaY < 0): always release tail follow so user can scroll freely
-    // When scrolling DOWN (deltaY > 0): only release if not at bottom, so auto-scroll works when at bottom
+
+    // Mark user as actively scrolling
+    userScrollingRef.current = true;
+    if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+    userScrollTimerRef.current = window.setTimeout(() => {
+      userScrollingRef.current = false;
+    }, 500); // Reset after 500ms of no scrolling
+
+    // When scrolling UP (deltaY < 0): always release tail follow
     if (event.deltaY < 0) {
       releaseTailFollow();
       return true;
@@ -308,7 +318,6 @@ export function useTranscriptVirtuosoScroll({
     if (element) {
       const distFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
       if (distFromBottom > 50) {
-        // Not at bottom → release follow so user can scroll freely
         releaseTailFollow();
         return true;
       }
