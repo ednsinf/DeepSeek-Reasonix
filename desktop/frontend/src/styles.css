@@ -3388,6 +3388,8 @@ a[href] {
   overflow-x: hidden;
   /* Virtuoso is the sole anchor owner for variable-height transcript rows. */
   overflow-anchor: none;
+  /* Impede que scroll vaze para container pai (scroll fantasma) */
+  overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
   padding: 24px 0 32px;
   scrollbar-width: thin;
