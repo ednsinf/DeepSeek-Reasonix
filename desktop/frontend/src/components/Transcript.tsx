@@ -367,18 +367,16 @@ export function Transcript({
     const lastId = questions[questions.length - 1]?.id ?? "";
     const prev = questionTailRef.current;
     questionTailRef.current = { length: questions.length, lastId };
-    // Only auto-scroll if user was already at bottom (not manually scrolling up)
+    // ONLY auto-scroll if Virtuoso reports we're at bottom (isAtBottom state)
+    // This is the official pattern from Virtuoso docs for chat applications
     if (prev.length > 0 && questions.length > prev.length && lastId !== prev.lastId) {
-      const el = scrollElement;
-      if (el) {
-        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-        // If user is near bottom (within 200px), auto-scroll. Otherwise, let user scroll freely.
-        if (distFromBottom < 200) scrollToBottom();
+      if (isAtBottom) {
+        // User is at bottom → safe to auto-scroll
+        scrollToBottom();
       }
-      // DO NOT call scrollToBottom when scrollElement is null — it forces scroll to bottom
-      // even when user is scrolling up, causing the "jump back up" bug
+      // If user is NOT at bottom → do nothing, let them scroll freely
     }
-  }, [questions, scrollToBottom, scrollElement]);
+  }, [questions, scrollToBottom, isAtBottom]);
 
   // Reset the auto-scroll pin when switching tabs so the new session always
   // starts at the bottom. Without this, stick.current from the previous tab
