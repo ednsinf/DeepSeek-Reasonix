@@ -107,11 +107,18 @@ export function useTranscriptVirtuosoScroll({
     let attempts = 0;
     const tick = () => {
       tailSettleFrameRef.current = null;
-      // Don't force scroll if user is actively scrolling or not in tail-follow mode
+      // CRITICAL: Only force scroll if user is at bottom (isAtBottom=true)
+      // and not actively scrolling. This prevents the "jump back up" bug.
       if (modeRef.current !== "tail-follow" || userScrollingRef.current) return;
+      // Additional check: verify we're actually near bottom before forcing
+      const element = scrollRef.current;
+      if (element) {
+        const distFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+        // If user is more than 100px from bottom, don't force scroll
+        if (distFromBottom > 100) return;
+      }
       scrollToTail("auto");
       attempts += 1;
-      const element = scrollRef.current;
       const settled = !element
         || nativeTranscriptDistanceFromBottom(element) <= TRANSCRIPT_AT_BOTTOM_THRESHOLD_PX;
       if (!settled && attempts < TAIL_SETTLE_MAX_ATTEMPTS && performance.now() < deadline) {
