@@ -403,11 +403,13 @@ export function Transcript({
       const height = element.clientHeight;
       if (height === lastHeight) return;
       lastHeight = height;
-      followGrowingTail();
+      // DO NOT call followGrowingTail here — it triggers AUTOSCROLL_TO_BOTTOM
+      // which forces scroll even when user is scrolling up.
+      // The Virtuoso's atBottomStateChange handles scroll position correctly.
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [scrollElement, followGrowingTail]);
+  }, [scrollElement]);
 
   // Sub-agent calls carry a parentId; collect them under their parent `task`
   // call so the parent card can render them nested, and skip them at top level.
