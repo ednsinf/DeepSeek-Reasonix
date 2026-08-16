@@ -374,9 +374,9 @@ export function Transcript({
         const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
         // If user is near bottom (within 200px), auto-scroll. Otherwise, let user scroll freely.
         if (distFromBottom < 200) scrollToBottom();
-      } else {
-        scrollToBottom();
       }
+      // DO NOT call scrollToBottom when scrollElement is null — it forces scroll to bottom
+      // even when user is scrolling up, causing the "jump back up" bug
     }
   }, [questions, scrollToBottom, scrollElement]);
 
