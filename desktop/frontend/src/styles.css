@@ -1976,6 +1976,18 @@ textarea {
   --font-content-family: var(--typography-conversation-font, var(--font-ui));
   font-family: var(--font-content-family);
   font-size: var(--font-content);
+  /* Impede scroll fantasma em todos os containers */
+  overscroll-behavior: contain;
+}
+
+/* Virtuoso cria container interno - aplicar overscroll nele também */
+.transcript > div {
+  overscroll-behavior: contain;
+}
+
+/* Scroller interno do Virtuoso */
+.transcript [data-scroll-mode] {
+  overscroll-behavior: contain;
 }
 .composer-wrap {
   --font-scale: var(--typography-composer-scale, var(--global-font-scale));
