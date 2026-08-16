@@ -367,8 +367,18 @@ export function Transcript({
     const lastId = questions[questions.length - 1]?.id ?? "";
     const prev = questionTailRef.current;
     questionTailRef.current = { length: questions.length, lastId };
-    if (prev.length > 0 && questions.length > prev.length && lastId !== prev.lastId) scrollToBottom();
-  }, [questions, scrollToBottom]);
+    // Only auto-scroll if user was already at bottom (not manually scrolling up)
+    if (prev.length > 0 && questions.length > prev.length && lastId !== prev.lastId) {
+      const el = scrollElement;
+      if (el) {
+        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        // If user is near bottom (within 200px), auto-scroll. Otherwise, let user scroll freely.
+        if (distFromBottom < 200) scrollToBottom();
+      } else {
+        scrollToBottom();
+      }
+    }
+  }, [questions, scrollToBottom, scrollElement]);
 
   // Reset the auto-scroll pin when switching tabs so the new session always
   // starts at the bottom. Without this, stick.current from the previous tab

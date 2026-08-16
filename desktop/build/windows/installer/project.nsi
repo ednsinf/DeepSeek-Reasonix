@@ -354,8 +354,18 @@ check_portable_entry:
 
 locked:
    IntOp $0 $0 + 1
+   ; After 10 retries (10s), try to kill the process automatically
+   IntCmp $0 10 try_kill 0 0
    IntCmp $0 ${REASONIX_UNLOCK_RETRIES} failed 0 0
    Sleep 1000
+   Goto retry
+
+try_kill:
+   DetailPrint "Reasonix is still running. Attempting to close automatically..."
+   nsExec::ExecToLog /OEM 'taskkill /F /IM reasonix-desktop.exe'
+   nsExec::ExecToLog /OEM 'taskkill /F /IM Reasonix.exe'
+   nsExec::ExecToLog /OEM 'taskkill /F /IM reasonix-launcher.exe'
+   Sleep 2000
    Goto retry
 
 failed:

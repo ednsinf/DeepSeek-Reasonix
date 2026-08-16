@@ -128,19 +128,21 @@ export function useTranscriptVirtuosoScroll({
 
   const runCommand = useCallback((command: TranscriptScrollCommand) => {
     const handle = virtuosoRef.current;
+    // Only auto-scroll if in tail-follow mode (not manual scroll)
+    const isTailFollow = modeRef.current === "tail-follow";
     switch (command.type) {
       case "AUTOSCROLL_TO_BOTTOM":
-        // Virtuoso's autoscrollToBottom() is inert without the followOutput
-        // prop (never passed here), so the rAF settle loop is the real
-        // follow mechanism.
-        scheduleTailSettle();
+        // Only auto-scroll if user was already at bottom (tail-follow mode)
+        if (isTailFollow) {
+          scheduleTailSettle();
+        }
         return;
       case "SCROLL_TO_LAST":
         scrollToTail(command.behavior);
-        // Re-aim across a bounded number of frames: the first LAST request
-        // can use Virtuoso's pre-measurement size tree, and late tail-row
-        // measurements would otherwise park the view above the real bottom.
-        scheduleTailSettle();
+        // Only re-aim if in tail-follow mode
+        if (isTailFollow) {
+          scheduleTailSettle();
+        }
         return;
       case "SCROLL_TO_INDEX":
         handle?.scrollToIndex({ index: command.index, align: "start", behavior: command.behavior });
@@ -295,9 +297,21 @@ export function useTranscriptVirtuosoScroll({
   const onWheelIntent = useCallback((event: ReactWheelEvent<HTMLElement>) => {
     if (event.ctrlKey || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return false;
     if (restoreTailIfNotScrollable()) return false;
-    if (event.deltaY < 0 || !pinnedRef.current) {
+    // When scrolling UP (deltaY < 0): always release tail follow so user can scroll freely
+    // When scrolling DOWN (deltaY > 0): only release if not at bottom, so auto-scroll works when at bottom
+    if (event.deltaY < 0) {
       releaseTailFollow();
       return true;
+    }
+    // Scrolling down: check if near bottom before releasing
+    const element = scrollRef.current;
+    if (element) {
+      const distFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+      if (distFromBottom > 50) {
+        // Not at bottom → release follow so user can scroll freely
+        releaseTailFollow();
+        return true;
+      }
     }
     return false;
   }, [releaseTailFollow, restoreTailIfNotScrollable]);
